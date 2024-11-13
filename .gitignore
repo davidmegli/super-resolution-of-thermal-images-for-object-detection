@@ -6,6 +6,8 @@ tb_logger/*
 wandb/*
 tmp/*
 weights/*
+inputs/*
+runs/*
 
 version.py
 
@@ -138,3 +140,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+colab output 1.txt
+yolo11n.pt
+yolo11m.pt
