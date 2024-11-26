@@ -46,8 +46,13 @@ def patch_YOLO_detection(
     #yolo_SR_downsized_predictions_list = {}
     yolo_GT_predictions_list = {}
     print(f"Inferencing on {len(superres_images_paths)} images")
+    print(f"Using model: {yolo_model}")
+    if combine_LR:
+        print(f"Using low resolution images from: {lowres_path}")
+    else:
+        print("Not combining with low resolution images")
     iterations = min (len(superres_images_paths), len(ground_truth_images)) if combine_LR else len(superres_images_paths)
-    elapsed_time = time.time() - start_time
+    elapsed_time = 0#time.time() - start_time
     for i in range(iterations):
         start_iteration_time = time.time()
         superres_image_path = superres_images_paths[i]
@@ -170,23 +175,30 @@ def patch_YOLO_detection(
                 )
                 cv2.imwrite(output_path + os.path.basename(ground_truth_image_path)[:-4] + '_GT_yolo11m_finetuned_pt.jpg', img_yolo11m)
 
-    if save_predictions:
-        patchyolo_SR_predictions_list_file = open(output_path + "patchyolo_SR_predictions_list" + time.time() + ".pkl", 'wb')
-        dill.dump(patchyolo_SR_predictions_list, patchyolo_SR_predictions_list_file)
-        patchyolo_SR_predictions_list_file.close()
-
     print(f"Elapsed time: {elapsed_time} seconds")
     print(f"Average time per image: {elapsed_time/len(superres_images_paths)} seconds")
+    strtime = time.strftime("%Y.%m.%d-%H.%M.%S")
+    if save_predictions:
+        patchyolo_SR_predictions_list_file = open(output_path + "patchyolo_SR_predictions_list" + strtime + ".pkl", 'wb')
+        dill.dump(patchyolo_SR_predictions_list, patchyolo_SR_predictions_list_file)
+        patchyolo_SR_predictions_list_file.close()
+        #save elapsed time and average time per image in a file
+    elapsed_time_file = open(output_path + "elapsed_time_patchyolo_SR"+strtime+".txt", 'w')
+    elapsed_time_file.write(f"Elapsed time: {elapsed_time} seconds\n")
+    elapsed_time_file.write(f"Average time per image: {elapsed_time/len(superres_images_paths)} seconds\n")
+    elapsed_time_file.write(f"Number of processed images: {len(superres_images_paths)}")
+    elapsed_time_file.close()
+
     return patchyolo_SR_predictions_list
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--yolo_model", type=str, default="yolo11m.pt", help="path to the yolo model to use for inference")
     parser.add_argument("--superres_path", type=str, default="inputs\\FLIR_SR_val\\", help="path to the directory containing the super resolved images")
-    parser.add_argument("--combine_LR", type=bool, default=True, help="whether to combine the detections of the super resolved image with the detections of low resolution image")
+    parser.add_argument("--combine_LR", type=bool, default=True, help="whether to combine the detections of the super resolved image with the detections of low resolution image", action=argparse.BooleanOptionalAction)
     parser.add_argument("--lowres_path", type=str, default="inputs\\FLIR_GT_val\\", help="path to the directory containing the low resolution images")
     parser.add_argument("--show_result_images", type=bool, default=False, help="whether to show the results of the inference and save the images with the detections")
     parser.add_argument("--output_path", type=str, default="results\\", help="output images directory")
-    parser.add_argument("--save_predictions", type=bool, default=False, help="whether to save the predictions in a file")
+    parser.add_argument("--save_predictions", type=bool, default=False, help="whether to save the predictions in a file", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
     patch_YOLO_detection(args.yolo_model, args.superres_path, args.combine_LR, args.lowres_path, args.show_result_images, args.output_path)
