@@ -12,14 +12,22 @@ from patched_yolo_infer import (
     visualize_results,
 )
 
+YOLO_MODEL_DEFAULT = "experiments\\yolo_finetune_epoch99.pt"
+SUPERRES_PATH_DEFAULT = "inputs\\FLIR_SR_val\\"
+COMBINE_LR_DEFAULT = True
+LOWRES_PATH_DEFAULT = "inputs\\FLIR_GT_val\\"
+SHOW_RESULT_IMAGES_DEFAULT = False
+OUTPUT_PATH_DEFAULT = "results\\"
+SAVE_PREDICTIONS_DEFAULT = False
+
 def patch_YOLO_detection(
-        yolo_model: str = "experiments\\yolo_finetune_epoch99.pt",
-        superres_path: str = "inputs\\FLIR_SR_val\\",
-        combine_LR: bool = True,
-        lowres_path: str = "inputs\\FLIR_GT_val\\",
-        show_result_images: bool = False,
-        output_path: str = "results\\",
-        save_predictions: bool = False,
+        yolo_model: str = YOLO_MODEL_DEFAULT,
+        superres_path: str = SUPERRES_PATH_DEFAULT,
+        combine_LR: bool = COMBINE_LR_DEFAULT,
+        lowres_path: str = LOWRES_PATH_DEFAULT,
+        show_result_images: bool = SHOW_RESULT_IMAGES_DEFAULT,
+        output_path: str = OUTPUT_PATH_DEFAULT,
+        save_predictions: bool = SAVE_PREDICTIONS_DEFAULT,
     ):
     '''
     Function to perform patched YOLO inference on super resolved images.
@@ -28,7 +36,9 @@ def patch_YOLO_detection(
         superres_path (str): path to the directory containing the super resolved images
         combine_LR (bool): whether to combine the detections of the super resolved image with the detections of low resolution image
         lowres_path (str): path to the directory containing the low resolution images
-        show_results (bool): whether to show the results of the inference and save the images with the detections
+        show_result_images (bool): whether to show the results of the inference and save the images with the detections
+        output_path (str): output images directory
+        save_predictions (bool): whether to save the predictions in a file
     '''
     if save_predictions:
         import dill
@@ -103,16 +113,16 @@ def patch_YOLO_detection(
                 classes_list=[0, 1, 2, 3, 5, 7],
                 )
             # resize crops to match the super resolution
-            original_image_element_crops.image = superres_image
+            '''original_image_element_crops.image = superres_image
             original_image_element_crops.shape_x = SR_x
             original_image_element_crops.shape_y = SR_y
-            original_image_element_crops.imgsz = SR_x
+            original_image_element_crops.imgsz = SR_x'''
             for i in range(len(original_image_element_crops.crops)):
-                original_image_element_crops.crops[i].detected_xyxy = original_image_element_crops.crops[i].detected_xyxy * 2
-                original_image_element_crops.crops[i].detected_xyxy_real = original_image_element_crops.crops[i].detected_xyxy_real * 2
+                '''original_image_element_crops.crops[i].detected_xyxy = original_image_element_crops.crops[i].detected_xyxy * 2
+                original_image_element_crops.crops[i].detected_xyxy_real = original_image_element_crops.crops[i].detected_xyxy_real * 2'''
                 original_image_element_crops.crops[i].source_image = superres_image
-                original_image_element_crops.crops[i].shape_x = SR_x
-                original_image_element_crops.crops[i].shape_y = SR_y
+                '''original_image_element_crops.crops[i].shape_x = SR_x
+                original_image_element_crops.crops[i].shape_y = SR_y'''
                 original_image_element_crops.crops[i].resize_results()
 
             element_crops.append(original_image_element_crops) #FIXME: DECOMMENTA. Il commento serve solo per testare il funzionamento di Patch YOLO SENZA unire le detections con quelle di YOLO su immagine originale
@@ -193,12 +203,12 @@ def patch_YOLO_detection(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--yolo_model", type=str, default="yolo11m.pt", help="path to the yolo model to use for inference")
-    parser.add_argument("--superres_path", type=str, default="inputs\\FLIR_SR_val\\", help="path to the directory containing the super resolved images")
-    parser.add_argument("--combine_LR", type=bool, default=True, help="whether to combine the detections of the super resolved image with the detections of low resolution image", action=argparse.BooleanOptionalAction)
-    parser.add_argument("--lowres_path", type=str, default="inputs\\FLIR_GT_val\\", help="path to the directory containing the low resolution images")
-    parser.add_argument("--show_result_images", type=bool, default=False, help="whether to show the results of the inference and save the images with the detections")
-    parser.add_argument("--output_path", type=str, default="results\\", help="output images directory")
-    parser.add_argument("--save_predictions", type=bool, default=False, help="whether to save the predictions in a file", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--yolo_model", type=str, default=YOLO_MODEL_DEFAULT, help="path to the yolo model to use for inference")
+    parser.add_argument("--superres_path", type=str, default=SUPERRES_PATH_DEFAULT, help="path to the directory containing the super resolved images")
+    parser.add_argument("--combine_LR", type=bool, default=COMBINE_LR_DEFAULT, help="whether to combine the detections of the super resolved image with the detections of low resolution image", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--lowres_path", type=str, default=LOWRES_PATH_DEFAULT, help="path to the directory containing the low resolution images")
+    parser.add_argument("--show_result_images", type=bool, default=SHOW_RESULT_IMAGES_DEFAULT, help="whether to show the results of the inference and save the images with the detections", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--output_path", type=str, default=OUTPUT_PATH_DEFAULT, help="output images directory")
+    parser.add_argument("--save_predictions", type=bool, default=SAVE_PREDICTIONS_DEFAULT, help="whether to save the predictions in a file", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
     patch_YOLO_detection(args.yolo_model, args.superres_path, args.combine_LR, args.lowres_path, args.show_result_images, args.output_path)
